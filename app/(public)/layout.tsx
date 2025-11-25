@@ -5,6 +5,7 @@ import Footer from "@/components/footer"
 import { CartProvider } from "@/contexts/cart-context"
 import Navbar from "@/components/navbar"
 import { WishlistProvider } from "@/contexts/wishlist-context"
+import { AuthProvider } from "@/contexts/auth-context"
 export default function PublicLayout({
     children,
 }: Readonly<{
@@ -14,10 +15,12 @@ export default function PublicLayout({
         <main>
             <CartProvider>
                 <WishlistProvider>
-                    <Navbar />
-                    <div className="min-h-screen">
-                        {children}
-                    </div>
+                    <AuthProvider>
+                        <Navbar />
+                        <div className="min-h-screen">
+                            {children}
+                        </div>
+                    </AuthProvider>
                     <Footer />
                 </WishlistProvider>
             </CartProvider>

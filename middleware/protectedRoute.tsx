@@ -2,11 +2,11 @@
 
 import { useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { useAuth } from "@/hooks/use-auth"
+import { useAuthContext } from "@/contexts/auth-context"
 
 // Protected Route Wrapper - Requires Authentication
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
-    const { isAuthenticated, loading, mounted } = useAuth()
+    const { isAuthenticated, loading, mounted } = useAuthContext()
     const router = useRouter()
 
     useEffect(() => {
@@ -32,7 +32,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 // Admin Only Route - Requires ADMIN role
 export function AdminRoute({ children }: { children: React.ReactNode }) {
-    const { user, isAdmin, loading, mounted } = useAuth()
+    const { user, isAdmin, loading, mounted } = useAuthContext()
     const router = useRouter()
 
     useEffect(() => {

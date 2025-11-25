@@ -16,6 +16,7 @@ import {
   ChevronRight
 } from "lucide-react"
 import { useState } from "react"
+import { useAuthContext } from "@/contexts/auth-context"
 
 const menuItems = [
   {
@@ -53,7 +54,7 @@ const menuItems = [
 export function Sidebar({ isOpen, onClose }: any) {
   const pathname = usePathname()
   const router = useRouter();
-  const { user, logout } = useAuth()
+  const { user, logout } = useAuthContext()
   const [collapsed, setCollapsed] = useState(false)
 
   return (

@@ -5,10 +5,10 @@ import { dummyProducts, dummyOrders, dummyUsers } from "@/lib/dummy-data"
 import { Card } from "@/components/ui/card"
 import { Package, ShoppingCart, DollarSign, Users, TrendingUp, AlertCircle } from "lucide-react"
 import { formatPrice } from "@/lib/utils"
-import { useAuth } from "@/hooks/use-auth"
+import { useAuthContext } from "@/contexts/auth-context"
 
 export default function AdminDashboard() {
-  const { mounted, isAdmin } = useAuth()
+  const { mounted, isAdmin } = useAuthContext()
   const [stats, setStats] = useState({
     totalProducts: 0,
     totalOrders: 0,

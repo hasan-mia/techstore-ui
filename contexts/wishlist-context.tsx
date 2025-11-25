@@ -16,7 +16,7 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
 export function useWishlistContext() {
     const ctx = useContext(WishlistContext);
     if (!ctx) {
-        throw new Error("useCartContext must be used inside <WishlistProvider>");
+        throw new Error("useWishlistContext must be used inside <WishlistProvider>");
     }
     return ctx;
 }

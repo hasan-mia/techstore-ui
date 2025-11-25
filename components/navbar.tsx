@@ -4,7 +4,6 @@ import Link from "next/link"
 import {
   ShoppingCart,
   Heart,
-  Search,
   Menu,
   X,
   ChevronDown,
@@ -20,13 +19,12 @@ import {
   LayoutDashboard
 } from "lucide-react"
 import { useCartContext } from "@/contexts/cart-context"
-import { useWishlist } from "@/hooks/use-wishlist"
-import { useAuth } from "@/hooks/use-auth"
 import { useState, useEffect } from "react"
 import { dummyCategories } from "@/lib/dummy-data"
 import TopBar from "./topBar"
 import SearchBar from "./searchBar"
 import { useWishlistContext } from "@/contexts/wishlist-context"
+import { useAuthContext } from "@/contexts/auth-context"
 
 
 function Logo() {
@@ -83,7 +81,7 @@ function CartWishlistButtons() {
 }
 
 function AuthButton() {
-  const { user, logout } = useAuth()
+  const { user, logout } = useAuthContext()
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
@@ -216,7 +214,7 @@ function CategoriesBar() {
 function MobileMenu({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const { count: cartCount, mounted: cartMounted } = useCartContext()
   const { count: wishlistCount, mounted: wishlistMounted } = useWishlistContext()
-  const { user, logout } = useAuth()
+  const { user, logout } = useAuthContext()
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {

@@ -5,6 +5,7 @@ import { useState } from "react"
 import { Sidebar } from "@/components/admin-sidebar"
 import { AdminHeader } from "@/components/admin/admin-header"
 import { AdminRoute } from "@/middleware/protectedRoute"
+import { AuthProvider } from "@/contexts/auth-context"
 
 export default function AdminLayout({
   children,
@@ -13,17 +14,19 @@ export default function AdminLayout({
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   return (
-    <AdminRoute>
-      <div className="flex h-screen bg-background">
-        <Sidebar isOpen={sidebarOpen}
-          onClose={() => setSidebarOpen(false)} />
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <AdminHeader onMenuClick={() => setSidebarOpen(true)} />
-          <main className="flex-1 overflow-y-auto bg-muted/30 p-6">
-            {children}
-          </main>
+    <AuthProvider>
+      <AdminRoute>
+        <div className="flex h-screen bg-background">
+          <Sidebar isOpen={sidebarOpen}
+            onClose={() => setSidebarOpen(false)} />
+          <div className="flex-1 flex flex-col overflow-hidden">
+            <AdminHeader onMenuClick={() => setSidebarOpen(true)} />
+            <main className="flex-1 overflow-y-auto bg-muted/30 p-6">
+              {children}
+            </main>
+          </div>
         </div>
-      </div>
-    </AdminRoute>
+      </AdminRoute>
+    </AuthProvider>
   )
 }

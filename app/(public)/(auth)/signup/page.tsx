@@ -4,7 +4,6 @@ import type React from "react"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { useAuth } from "@/hooks/use-auth"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
@@ -21,8 +20,8 @@ import {
   Sparkles,
   Gift,
   TrendingUp,
-  ArrowLeft
 } from "lucide-react"
+import { useAuthContext } from "@/contexts/auth-context"
 
 export default function SignupPage() {
   const [formData, setFormData] = useState({
@@ -36,7 +35,7 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false)
   const [agreedToTerms, setAgreedToTerms] = useState(false)
   const router = useRouter()
-  const { login } = useAuth()
+  const { login } = useAuthContext()
   const { toast } = useToast()
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {

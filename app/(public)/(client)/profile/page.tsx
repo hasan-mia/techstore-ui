@@ -3,14 +3,14 @@
 import type React from "react"
 
 import { useState } from "react"
-import { useAuth } from "@/hooks/use-auth"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
+import { useAuthContext } from "@/contexts/auth-context"
 
 export default function ProfilePage() {
-  const { user } = useAuth()
+  const { user } = useAuthContext()
   const { toast } = useToast()
   const [formData, setFormData] = useState({
     name: user?.name || "",

@@ -1,7 +1,6 @@
 "use client"
 
 import { Package, ShoppingBag, Truck, CheckCircle, XCircle, Clock, Eye } from "lucide-react"
-import { useAuth } from "@/hooks/use-auth"
 import { useState, useEffect } from "react"
 import type { Order, OrderStatus } from "@/lib/types"
 import { Button } from "@/components/ui/button"
@@ -11,6 +10,7 @@ import { formatPrice } from "@/lib/utils"
 import { dummyOrders, dummyProducts } from "@/lib/dummy-data"
 import Link from "next/link"
 import Image from "next/image"
+import { useAuthContext } from "@/contexts/auth-context"
 
 // Helper to get full order with product details
 const getOrdersWithProducts = (userId: string) => {
@@ -64,7 +64,7 @@ const getStatusConfig = (status: OrderStatus) => {
 }
 
 export default function OrdersPage() {
-  const { user, mounted } = useAuth()
+  const { user, mounted } = useAuthContext()
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
 
