@@ -59,28 +59,3 @@ export function AdminRoute({ children }: { children: React.ReactNode }) {
 
     return <>{children}</>
 }
-
-// Usage in pages/layouts:
-// app/orders/page.tsx
-export function OrdersPage() {
-    return (
-        <ProtectedRoute>
-            <div>
-                <h1>My Orders</h1>
-                {/* Orders content */}
-            </div>
-        </ProtectedRoute>
-    )
-}
-
-// app/admin/page.tsx
-export function AdminPage() {
-    return (
-        <AdminRoute>
-            <div>
-                <h1>Admin Dashboard</h1>
-                {/* Admin content */}
-            </div>
-        </AdminRoute>
-    )
-}

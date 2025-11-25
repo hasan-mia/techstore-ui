@@ -30,63 +30,9 @@ import { useWishlist } from "@/hooks/use-wishlist"
 import { useAuth } from "@/hooks/use-auth"
 import { useState, useEffect } from "react"
 import { dummyCategories } from "@/lib/dummy-data"
+import TopBar from "./topBar"
+import SearchBar from "./searchBar"
 
-// Separate Components
-function TopBar() {
-  return (
-    <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white text-sm">
-      <div className="container mx-auto px-4 py-2.5">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4 lg:gap-6">
-            <a
-              href="tel:+8801234567890"
-              className="flex items-center gap-2 hover:text-blue-400 transition-colors group"
-            >
-              <Phone className="w-4 h-4 group-hover:scale-110 transition-transform" />
-              <span className="hidden sm:inline">+880 1234-567890</span>
-            </a>
-            <a
-              href="mailto:support@techstore.com"
-              className="flex items-center gap-2 hover:text-blue-400 transition-colors group"
-            >
-              <Mail className="w-4 h-4 group-hover:scale-110 transition-transform" />
-              <span className="hidden lg:inline">support@techstore.com</span>
-            </a>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <span className="hidden md:inline text-slate-300 font-medium">
-              🎉 Free shipping on orders over $50
-            </span>
-            <div className="flex items-center gap-2.5">
-              <a
-                href="#"
-                className="hover:text-blue-400 transition-colors hover:scale-110 transform"
-                aria-label="Facebook"
-              >
-                <Facebook className="w-4 h-4" />
-              </a>
-              <a
-                href="#"
-                className="hover:text-blue-400 transition-colors hover:scale-110 transform"
-                aria-label="Twitter"
-              >
-                <Twitter className="w-4 h-4" />
-              </a>
-              <a
-                href="#"
-                className="hover:text-blue-400 transition-colors hover:scale-110 transform"
-                aria-label="Instagram"
-              >
-                <Instagram className="w-4 h-4" />
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
 
 function Logo() {
   return (
@@ -101,56 +47,6 @@ function Logo() {
         <div className="text-xs text-slate-500">Premium Electronics</div>
       </div>
     </Link>
-  )
-}
-
-function SearchBar() {
-  const [searchQuery, setSearchQuery] = useState("")
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (searchQuery.trim()) {
-      window.location.href = `/products?search=${encodeURIComponent(searchQuery)}`
-    }
-  }
-
-  return (
-    <>
-      {/* Desktop Search */}
-      <form onSubmit={handleSearch} className="flex-1 max-w-2xl hidden md:block">
-        <div className="relative">
-          <input
-            type="text"
-            placeholder="Search for products, brands, and more..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full px-5 py-3 pr-12 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all hover:border-slate-300"
-          />
-          <button
-            type="submit"
-            className="absolute right-2 top-1/2 -translate-y-1/2 bg-blue-600 text-white p-2.5 rounded-lg hover:bg-blue-700 transition-colors shadow-sm hover:shadow-md"
-          >
-            <Search className="w-5 h-5" />
-          </button>
-        </div>
-      </form>
-
-      {/* Mobile Search */}
-      <form onSubmit={handleSearch} className="mt-4 md:hidden">
-        <div className="relative">
-          <input
-            type="text"
-            placeholder="Search products..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full px-4 py-2.5 pr-10 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-          />
-          <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2">
-            <Search className="w-5 h-5 text-slate-400" />
-          </button>
-        </div>
-      </form>
-    </>
   )
 }
 
@@ -235,27 +131,26 @@ function AuthButton() {
         </div>
 
         <div className="py-2">
-          <Link
-            href="/profile"
-            className="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 transition-all"
-          >
-            <User className="w-4 h-4 text-slate-600" />
-            <span className="text-sm font-medium text-slate-700">My Profile</span>
-          </Link>
-          <Link
-            href="/orders"
-            className="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 transition-all"
-          >
-            <Package className="w-4 h-4 text-slate-600" />
-            <span className="text-sm font-medium text-slate-700">My Orders</span>
-          </Link>
-          <Link
-            href="/settings"
-            className="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 transition-all"
-          >
-            <Settings className="w-4 h-4 text-slate-600" />
-            <span className="text-sm font-medium text-slate-700">Settings</span>
-          </Link>
+          {
+            user.role === "USER" && (
+              <>
+                <Link
+                  href="/profile"
+                  className="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 transition-all"
+                >
+                  <User className="w-4 h-4 text-slate-600" />
+                  <span className="text-sm font-medium text-slate-700">My Profile</span>
+                </Link>
+                <Link
+                  href="/orders"
+                  className="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 transition-all"
+                >
+                  <Package className="w-4 h-4 text-slate-600" />
+                  <span className="text-sm font-medium text-slate-700">My Orders</span>
+                </Link>
+              </>
+            )
+          }
 
           {user.role === "ADMIN" && (
             <>
@@ -424,22 +319,26 @@ function MobileMenu({ isOpen, onClose }: { isOpen: boolean; onClose: () => void 
 
           {mounted && user && (
             <>
-              <Link
-                href="/profile"
-                className="flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50 rounded-lg transition-all"
-                onClick={onClose}
-              >
-                <User className="w-5 h-5 text-slate-600" />
-                <span className="font-medium text-slate-700">My Profile</span>
-              </Link>
-              <Link
-                href="/orders"
-                className="flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50 rounded-lg transition-all"
-                onClick={onClose}
-              >
-                <Package className="w-5 h-5 text-slate-600" />
-                <span className="font-medium text-slate-700">My Orders</span>
-              </Link>
+              {
+                user.role === "USER" && (<>
+                  <Link
+                    href="/profile"
+                    className="flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50 rounded-lg transition-all"
+                    onClick={onClose}
+                  >
+                    <User className="w-5 h-5 text-slate-600" />
+                    <span className="font-medium text-slate-700">My Profile</span>
+                  </Link>
+                  <Link
+                    href="/orders"
+                    className="flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50 rounded-lg transition-all"
+                    onClick={onClose}
+                  >
+                    <Package className="w-5 h-5 text-slate-600" />
+                    <span className="font-medium text-slate-700">My Orders</span>
+                  </Link>
+                </>)
+              }
 
               {user.role === "ADMIN" && (
                 <Link
@@ -482,7 +381,7 @@ function MobileMenu({ isOpen, onClose }: { isOpen: boolean; onClose: () => void 
 }
 
 // Main Navbar Component
-export function Navbar() {
+export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
 

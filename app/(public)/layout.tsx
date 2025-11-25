@@ -1,8 +1,9 @@
 import type React from "react"
 import { Analytics } from "@vercel/analytics/next"
-import { Navbar } from "@/components/navbar"
 import { Toaster } from "@/components/ui/toaster"
 import Footer from "@/components/footer"
+import { CartProvider } from "@/contexts/cart-context"
+import Navbar from "@/components/navbar"
 export default function PublicLayout({
     children,
 }: Readonly<{
@@ -10,9 +11,13 @@ export default function PublicLayout({
 }>) {
     return (
         <main>
-            <Navbar />
-            <main className="min-h-screen">{children}</main>
-            <Footer />
+            <CartProvider>
+                <Navbar />
+                <main className="min-h-screen">
+                    {children}
+                </main>
+                <Footer />
+            </CartProvider>
             <Toaster />
             <Analytics />
         </main>
