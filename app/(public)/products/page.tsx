@@ -11,6 +11,8 @@ import { SlidersHorizontal, X, Grid3x3, LayoutGrid } from "lucide-react"
 function ProductsContent() {
   const searchParams = useSearchParams()
   const categoryId = searchParams.get("category")
+  const searchQuery = searchParams.get("search") || ""
+
   const [priceRange, setPriceRange] = useState({ min: 0, max: 2000 })
   const [sortBy, setSortBy] = useState("newest")
   const [selectedRatings, setSelectedRatings] = useState<number[]>([])
@@ -19,6 +21,16 @@ function ProductsContent() {
 
   const filtered = useMemo(() => {
     let result = [...dummyProducts]
+
+    // Search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase()
+      result = result.filter((p) =>
+        p.name.toLowerCase().includes(query) ||
+        p.description.toLowerCase().includes(query) ||
+        p.brand?.toLowerCase().includes(query)
+      )
+    }
 
     // Category filter
     if (categoryId) {
@@ -47,7 +59,7 @@ function ProductsContent() {
     }
 
     return result
-  }, [categoryId, priceRange, sortBy, selectedRatings])
+  }, [categoryId, searchQuery, priceRange, sortBy, selectedRatings])
 
   const selectedCategory = categoryId ? dummyCategories.find((c) => c.id === categoryId) : null
 
@@ -63,7 +75,12 @@ function ProductsContent() {
     setSelectedRatings([])
   }
 
-  const hasActiveFilters = priceRange.max !== 2000 || selectedRatings.length > 0
+  const clearSearch = () => {
+    window.history.pushState({}, '', `/products${categoryId ? `?category=${categoryId}` : ''}`)
+    window.location.reload()
+  }
+
+  const hasActiveFilters = priceRange.max !== 2000 || selectedRatings.length > 0 || searchQuery
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
@@ -73,11 +90,12 @@ function ProductsContent() {
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
             <div>
               <h1 className="text-3xl lg:text-4xl font-bold text-slate-900 mb-2">
-                {selectedCategory ? selectedCategory.name : "All Products"}
+                {searchQuery ? `Search Results for "${searchQuery}"` : selectedCategory ? selectedCategory.name : "All Products"}
               </h1>
               <p className="text-slate-600">
-                Discover {filtered.length} {filtered.length === 1 ? "product" : "products"}
-                {selectedCategory && ` in ${selectedCategory.name}`}
+                {searchQuery ? `Found ${filtered.length} ${filtered.length === 1 ? "product" : "products"}` :
+                  `Discover ${filtered.length} ${filtered.length === 1 ? "product" : "products"}`}
+                {selectedCategory && !searchQuery && ` in ${selectedCategory.name}`}
               </p>
             </div>
 
@@ -112,7 +130,7 @@ function ProductsContent() {
                 Filters
                 {hasActiveFilters && (
                   <Badge className="ml-2 h-5 w-5 rounded-full p-0 flex items-center justify-center">
-                    {selectedRatings.length + (priceRange.max !== 2000 ? 1 : 0)}
+                    {selectedRatings.length + (priceRange.max !== 2000 ? 1 : 0) + (searchQuery ? 1 : 0)}
                   </Badge>
                 )}
               </Button>
@@ -123,6 +141,15 @@ function ProductsContent() {
           {hasActiveFilters && (
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-sm font-medium text-slate-700">Active Filters:</span>
+              {searchQuery && (
+                <Badge variant="secondary" className="gap-2">
+                  Search: "{searchQuery}"
+                  <X
+                    className="w-3 h-3 cursor-pointer"
+                    onClick={clearSearch}
+                  />
+                </Badge>
+              )}
               {priceRange.max !== 2000 && (
                 <Badge variant="secondary" className="gap-2">
                   Price: ${priceRange.min} - ${priceRange.max}
@@ -280,10 +307,12 @@ function ProductsContent() {
                     No products found
                   </h3>
                   <p className="text-slate-600 mb-6">
-                    Try adjusting your filters or search criteria
+                    {searchQuery
+                      ? `No results for "${searchQuery}". Try different keywords or adjust your filters.`
+                      : "Try adjusting your filters or search criteria"}
                   </p>
-                  <Button onClick={resetFilters} variant="outline">
-                    Reset Filters
+                  <Button onClick={() => { resetFilters(); if (searchQuery) clearSearch(); }} variant="outline">
+                    Reset {searchQuery ? 'All' : 'Filters'}
                   </Button>
                 </div>
               </div>

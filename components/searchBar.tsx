@@ -1,15 +1,35 @@
 "use client";
 
 import { Search } from 'lucide-react'
-import React, { useState } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 
 export default function SearchBar() {
     const [searchQuery, setSearchQuery] = useState("")
+    const router = useRouter()
+
+    // Debounced search function
+    const debouncedSearch = useCallback((query: string) => {
+        if (query.trim()) {
+            router.push(`/products?search=${encodeURIComponent(query)}`)
+        }
+    }, [router])
+
+    // Debounce effect
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (searchQuery.trim()) {
+                debouncedSearch(searchQuery)
+            }
+        }, 500) // 500ms delay
+
+        return () => clearTimeout(timer)
+    }, [searchQuery, debouncedSearch])
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault()
         if (searchQuery.trim()) {
-            window.location.href = `/products?search=${encodeURIComponent(searchQuery)}`
+            router.push(`/products?search=${encodeURIComponent(searchQuery)}`)
         }
     }
 
