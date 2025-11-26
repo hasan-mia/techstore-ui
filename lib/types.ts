@@ -70,22 +70,55 @@ export interface Category {
   description: string
   image: string
 }
+// lib/types.ts (or wherever your types are)
 
-export interface Product {
-  [x: string]: any
-  id: string
-  name: string
-  description: string
-  price: number
-  image: string
-  categoryId: string
-  category?: Category
-  stock: number
-  rating: number
-  reviews: number
-  createdAt: Date
+export interface Category {
+  id: string;
+  name: string;
+  description: string;
+  image: string;
 }
 
+export interface Product {
+  id: string;
+  name: string;
+  description: string;
+  price: string; // Coming as string from API
+  images: string[];
+  category_id: string;
+  stock: number;
+  rating: string; // Coming as string from API
+  reviews: number;
+  status: 'active' | 'inactive' | 'out_of_stock';
+  created_at: string;
+  updated_at: string;
+  category: Category;
+  total_sold?: number; // Only for best sellers
+}
+
+export interface ProductsResponse {
+  success: boolean;
+  message: string;
+  products: Product[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
+
+export interface ProductFilters {
+  page?: number;
+  limit?: number;
+  search?: string;
+  category_id?: string;
+  min_price?: number;
+  max_price?: number;
+  status?: string;
+  sortBy?: string;
+  sortOrder?: 'ASC' | 'DESC';
+}
 // Cart Types
 export interface CartItem {
   id: string

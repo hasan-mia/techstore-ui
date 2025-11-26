@@ -1,12 +1,13 @@
 "use client"
 
 import { Suspense, useState, useMemo } from "react"
-import { dummyProducts, dummyCategories } from "@/lib/dummy-data"
+import { dummyCategories } from "@/lib/dummy-data"
 import { ProductCard } from "@/components/product-card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useSearchParams } from "next/navigation"
-import { SlidersHorizontal, X, Grid3x3, LayoutGrid } from "lucide-react"
+import { SlidersHorizontal, X, Grid3x3, LayoutGrid, Loader2 } from "lucide-react"
+import { useProducts } from "@/api/product"
 
 function ProductsContent() {
   const searchParams = useSearchParams()
@@ -14,52 +15,41 @@ function ProductsContent() {
   const searchQuery = searchParams.get("search") || ""
 
   const [priceRange, setPriceRange] = useState({ min: 0, max: 2000 })
-  const [sortBy, setSortBy] = useState("newest")
+  const [sortBy, setSortBy] = useState("created_at")
+  const [sortOrder, setSortOrder] = useState<"ASC" | "DESC">("DESC")
   const [selectedRatings, setSelectedRatings] = useState<number[]>([])
   const [showFilters, setShowFilters] = useState(false)
   const [gridView, setGridView] = useState<"3" | "4">("3")
+  const [page, setPage] = useState(1)
+  const limit = 12
 
+  // Fetch products using the API hook
+  const { data, isLoading, isError, error } = useProducts({
+    page,
+    limit,
+    search: searchQuery || undefined,
+    category_id: categoryId || undefined,
+    min_price: priceRange.min > 0 ? priceRange.min : undefined,
+    max_price: priceRange.max < 2000 ? priceRange.max : undefined,
+    sortBy,
+    sortOrder,
+  })
+
+  // Client-side rating filter (since backend doesn't support it)
   const filtered = useMemo(() => {
-    let result = [...dummyProducts]
+    if (!data || !data?.products) return []
 
-    // Search filter
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase()
-      result = result.filter((p) =>
-        p.name.toLowerCase().includes(query) ||
-        p.description.toLowerCase().includes(query) ||
-        p.brand?.toLowerCase().includes(query)
-      )
-    }
-
-    // Category filter
-    if (categoryId) {
-      result = result.filter((p) => p.categoryId === categoryId)
-    }
-
-    // Price filter
-    result = result.filter((p) => p.price >= priceRange.min && p.price <= priceRange.max)
+    let result = [...data.products]
 
     // Rating filter
     if (selectedRatings.length > 0) {
-      result = result.filter((p) => selectedRatings.some((rating) => p.rating >= rating && p.rating < rating + 1))
-    }
-
-    // Sorting
-    if (sortBy === "price-low") {
-      result.sort((a, b) => a.price - b.price)
-    } else if (sortBy === "price-high") {
-      result.sort((a, b) => b.price - a.price)
-    } else if (sortBy === "rating") {
-      result.sort((a, b) => b.rating - a.rating)
-    } else if (sortBy === "newest") {
-      result.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-    } else if (sortBy === "popular") {
-      result.sort((a, b) => b.reviews - a.reviews)
+      result = result.filter((p) =>
+        selectedRatings.some((rating) => Number(p.rating) >= rating && Number(p.rating) < rating + 1)
+      )
     }
 
     return result
-  }, [categoryId, searchQuery, priceRange, sortBy, selectedRatings])
+  }, [data?.products, selectedRatings])
 
   const selectedCategory = categoryId ? dummyCategories.find((c) => c.id === categoryId) : null
 
@@ -71,8 +61,10 @@ function ProductsContent() {
 
   const resetFilters = () => {
     setPriceRange({ min: 0, max: 2000 })
-    setSortBy("newest")
+    setSortBy("created_at")
+    setSortOrder("DESC")
     setSelectedRatings([])
+    setPage(1)
   }
 
   const clearSearch = () => {
@@ -81,6 +73,32 @@ function ProductsContent() {
   }
 
   const hasActiveFilters = priceRange.max !== 2000 || selectedRatings.length > 0 || searchQuery
+
+  const handleSortChange = (value: string) => {
+    switch (value) {
+      case "newest":
+        setSortBy("created_at")
+        setSortOrder("DESC")
+        break
+      case "price-low":
+        setSortBy("price")
+        setSortOrder("ASC")
+        break
+      case "price-high":
+        setSortBy("price")
+        setSortOrder("DESC")
+        break
+      case "rating":
+        setSortBy("rating")
+        setSortOrder("DESC")
+        break
+      case "popular":
+        setSortBy("reviews")
+        setSortOrder("DESC")
+        break
+    }
+    setPage(1)
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
@@ -93,9 +111,15 @@ function ProductsContent() {
                 {searchQuery ? `Search Results for "${searchQuery}"` : selectedCategory ? selectedCategory.name : "All Products"}
               </h1>
               <p className="text-slate-600">
-                {searchQuery ? `Found ${filtered.length} ${filtered.length === 1 ? "product" : "products"}` :
-                  `Discover ${filtered.length} ${filtered.length === 1 ? "product" : "products"}`}
-                {selectedCategory && !searchQuery && ` in ${selectedCategory.name}`}
+                {isLoading ? (
+                  "Loading products..."
+                ) : (
+                  <>
+                    {searchQuery ? `Found ${filtered.length} ${filtered.length === 1 ? "product" : "products"}` :
+                      `Discover ${data?.pagination?.total || 0} ${data?.pagination?.total === 1 ? "product" : "products"}`}
+                    {selectedCategory && !searchQuery && ` in ${selectedCategory.name}`}
+                  </>
+                )}
               </p>
             </div>
 
@@ -144,10 +168,7 @@ function ProductsContent() {
               {searchQuery && (
                 <Badge variant="secondary" className="gap-2">
                   Search: "{searchQuery}"
-                  <X
-                    className="w-3 h-3 cursor-pointer"
-                    onClick={clearSearch}
-                  />
+                  <X className="w-3 h-3 cursor-pointer" onClick={clearSearch} />
                 </Badge>
               )}
               {priceRange.max !== 2000 && (
@@ -174,10 +195,7 @@ function ProductsContent() {
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 lg:gap-8">
           {/* Filters Sidebar */}
-          <div
-            className={`lg:col-span-1 ${showFilters ? "block" : "hidden lg:block"
-              } space-y-6`}
-          >
+          <div className={`lg:col-span-1 ${showFilters ? "block" : "hidden lg:block"} space-y-6`}>
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 sticky top-4">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="font-bold text-lg text-slate-900">Filters</h3>
@@ -200,12 +218,12 @@ function ProductsContent() {
                     Sort By
                   </label>
                   <select
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value)}
+                    value={`${sortBy}-${sortOrder}`}
+                    onChange={(e) => handleSortChange(e.target.value.split('-')[0])}
                     className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
-                    <option value="newest">Newest First</option>
-                    <option value="popular">Most Popular</option>
+                    <option value="created_at">Newest First</option>
+                    <option value="reviews">Most Popular</option>
                     <option value="price-low">Price: Low to High</option>
                     <option value="price-high">Price: High to Low</option>
                     <option value="rating">Highest Rated</option>
@@ -224,9 +242,10 @@ function ProductsContent() {
                       max="2000"
                       step="50"
                       value={priceRange.max}
-                      onChange={(e) =>
+                      onChange={(e) => {
                         setPriceRange((prev) => ({ ...prev, max: Number.parseInt(e.target.value) }))
-                      }
+                        setPage(1)
+                      }}
                       className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
                     />
                     <div className="flex items-center justify-between text-sm">
@@ -243,10 +262,7 @@ function ProductsContent() {
                   </label>
                   <div className="space-y-2">
                     {[4, 3, 2, 1].map((rating) => (
-                      <label
-                        key={rating}
-                        className="flex items-center gap-2 cursor-pointer group"
-                      >
+                      <label key={rating} className="flex items-center gap-2 cursor-pointer group">
                         <input
                           type="checkbox"
                           checked={selectedRatings.includes(rating)}
@@ -288,24 +304,65 @@ function ProductsContent() {
 
           {/* Products Grid */}
           <div className="lg:col-span-3">
-            {filtered.length > 0 ? (
-              <div
-                className={`grid grid-cols-1 md:grid-cols-2 ${gridView === "3" ? "lg:grid-cols-3" : "lg:grid-cols-4"
-                  } gap-6`}
-              >
-                {filtered.map((product) => (
-                  <ProductCard key={product.id} product={product} />
-                ))}
+            {isLoading ? (
+              <div className="text-center py-16">
+                <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
+                <p className="text-slate-600">Loading products...</p>
               </div>
+            ) : isError ? (
+              <div className="text-center py-16 bg-white rounded-xl border border-slate-200">
+                <div className="max-w-md mx-auto">
+                  <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <X className="w-8 h-8 text-red-600" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-slate-900 mb-2">Error Loading Products</h3>
+                  <p className="text-slate-600 mb-6">{error?.message || "Something went wrong"}</p>
+                  <Button onClick={() => window.location.reload()} variant="outline">
+                    Try Again
+                  </Button>
+                </div>
+              </div>
+            ) : filtered.length > 0 ? (
+              <>
+                <div
+                  className={`grid grid-cols-1 md:grid-cols-2 ${gridView === "3" ? "lg:grid-cols-3" : "lg:grid-cols-4"
+                    } gap-6`}
+                >
+                  {filtered.map((product) => (
+                    <ProductCard key={product.id} product={product} />
+                  ))}
+                </div>
+
+                {/* Pagination */}
+                {data?.pagination && data?.pagination?.totalPages > 1 && (
+                  <div className="flex justify-center items-center gap-2 mt-8">
+                    <Button
+                      variant="outline"
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
+                      disabled={page === 1}
+                    >
+                      Previous
+                    </Button>
+                    <span className="text-sm text-slate-600">
+                      Page {page} of {data?.pagination?.totalPages}
+                    </span>
+                    <Button
+                      variant="outline"
+                      onClick={() => setPage((p) => Math.min(data?.pagination?.totalPages, p + 1))}
+                      disabled={page === data?.pagination?.totalPages}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                )}
+              </>
             ) : (
               <div className="text-center py-16 bg-white rounded-xl border border-slate-200">
                 <div className="max-w-md mx-auto">
                   <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
                     <SlidersHorizontal className="w-8 h-8 text-slate-400" />
                   </div>
-                  <h3 className="text-xl font-semibold text-slate-900 mb-2">
-                    No products found
-                  </h3>
+                  <h3 className="text-xl font-semibold text-slate-900 mb-2">No products found</h3>
                   <p className="text-slate-600 mb-6">
                     {searchQuery
                       ? `No results for "${searchQuery}". Try different keywords or adjust your filters.`

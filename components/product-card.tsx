@@ -9,15 +9,15 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/hooks/use-toast"
-import { formatPrice } from "@/lib/utils"
 import { useCartContext } from "@/contexts/cart-context"
 import { useWishlistContext } from "@/contexts/wishlist-context"
 
 interface ProductCardProps {
   product: Product
+  showBestSellerBadge?: boolean
 }
 
-export function ProductCard({ product }: ProductCardProps) {
+export function ProductCard({ product, showBestSellerBadge = false }: ProductCardProps) {
   const { addItem, isInCart, getItemQuantity } = useCartContext()
   const { isInWishlist, toggleWishlist } = useWishlistContext()
   const { toast } = useToast()
@@ -26,10 +26,14 @@ export function ProductCard({ product }: ProductCardProps) {
   const inCart = isInCart(product.id)
   const cartQuantity = getItemQuantity(product.id)
 
+  // Convert string values to numbers for calculations
+  const priceNum = parseFloat(product.price)
+  const ratingNum = parseFloat(product.rating)
+
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault()
 
-    if (product.stock === 0) {
+    if (product.stock === 0 || product.status === 'out_of_stock') {
       toast({
         title: "Out of stock",
         description: "This product is currently unavailable",
@@ -69,13 +73,15 @@ export function ProductCard({ product }: ProductCardProps) {
   }
 
   const isNewProduct = () => {
+    const createdDate = new Date(product.created_at)
     const daysSinceCreated = Math.floor(
-      (Date.now() - product.createdAt.getTime()) / (1000 * 60 * 60 * 24)
+      (Date.now() - createdDate.getTime()) / (1000 * 60 * 60 * 24)
     )
     return daysSinceCreated <= 7
   }
 
   const isLowStock = product.stock > 0 && product.stock <= 5
+  const productImage = product.images?.[0] || "/placeholder.svg"
 
   return (
     <Link href={`/products/${product.id}`}>
@@ -87,7 +93,7 @@ export function ProductCard({ product }: ProductCardProps) {
         {/* Image Container */}
         <div className="relative h-64 bg-slate-50 overflow-hidden">
           <Image
-            src={product.image || "/placeholder.svg"}
+            src={productImage}
             alt={product.name}
             fill
             className="object-cover group-hover:scale-110 transition-transform duration-500"
@@ -100,7 +106,7 @@ export function ProductCard({ product }: ProductCardProps) {
                 New
               </Badge>
             )}
-            {product.rating >= 4.5 && (
+            {(showBestSellerBadge || ratingNum >= 4.5) && (
               <Badge className="bg-amber-500 text-white border-0 shadow-lg flex items-center gap-1">
                 <Star className="w-3 h-3 fill-white" />
                 Best Seller
@@ -159,7 +165,7 @@ export function ProductCard({ product }: ProductCardProps) {
           </div>
 
           {/* Out of Stock Overlay */}
-          {product.stock === 0 && (
+          {(product.stock === 0 || product.status === 'out_of_stock') && (
             <div className="absolute inset-0 bg-slate-900/75 backdrop-blur-sm flex items-center justify-center">
               <Badge variant="destructive" className="text-lg px-4 py-2">
                 Out of Stock
@@ -170,6 +176,11 @@ export function ProductCard({ product }: ProductCardProps) {
 
         {/* Content */}
         <div className="p-5">
+          {/* Category Tag */}
+          <div className="text-xs text-blue-600 font-medium mb-2">
+            {product.category.name}
+          </div>
+
           {/* Product Name */}
           <h3 className="font-semibold text-lg mb-2 text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-2 min-h-[3.5rem]">
             {product.name}
@@ -186,7 +197,7 @@ export function ProductCard({ product }: ProductCardProps) {
               {Array.from({ length: 5 }).map((_, i) => (
                 <Star
                   key={i}
-                  className={`w-4 h-4 ${i < Math.floor(product.rating)
+                  className={`w-4 h-4 ${i < Math.floor(ratingNum)
                     ? "fill-amber-400 text-amber-400"
                     : "text-slate-300"
                     }`}
@@ -205,7 +216,7 @@ export function ProductCard({ product }: ProductCardProps) {
           <div className="flex items-center justify-between pt-3 border-t border-slate-100">
             <div>
               <div className="text-2xl font-bold text-slate-900">
-                {formatPrice(product.price)}
+                ${priceNum.toFixed(2)}
               </div>
               {product.stock > 0 && (
                 <div className="flex items-center gap-1 text-xs text-slate-500 mt-1">

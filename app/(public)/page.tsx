@@ -1,7 +1,8 @@
 import { Hero } from "@/components/home/hero"
 import { CategoryGrid } from "@/components/home/category-grid"
-import { ProductGrid } from "@/components/home/product-grid"
 import { FeaturesSection } from "@/components/home/features-section"
+import { BestSellers } from "@/components/home/best -sellers"
+import { NewArrivals } from "@/components/home/new-arrivals"
 
 export default function Home() {
   return (
@@ -15,11 +16,11 @@ export default function Home() {
       {/* Categories */}
       <CategoryGrid />
 
-      {/* Recent Products */}
-      <ProductGrid title="New Arrivals" variant="recent" />
+      <BestSellers limit={9} />
 
-      {/* Popular Products */}
-      <ProductGrid title="Best Sellers" variant="popular" />
+      {/* New Arrivals Section */}
+      <NewArrivals limit={9} />
+
     </div>
   )
 }

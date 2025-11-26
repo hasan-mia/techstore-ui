@@ -6,9 +6,11 @@ import Image from "next/image"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { heroSlides } from "@/lib/dummy-data"
+import { useRouter } from "next/navigation"
 
 
 export function Hero() {
+  const router = useRouter();
   const [currentSlide, setCurrentSlide] = useState(0)
   const [isAutoPlaying, setIsAutoPlaying] = useState(true)
 
@@ -100,7 +102,7 @@ export function Hero() {
 
                 {/* CTA Buttons */}
                 <div className="flex gap-4 pt-4">
-                  <Link href={slide.category_id ? `/categories/${slide.category_id}` : `/products/${slide.product_id}`}>
+                  <Link href={slide.category_id ? `/products?category=${slide.category_id}` : `/products/${slide.product_id}`}>
                     <Button
                       size="lg"
                       className="bg-white text-slate-900 hover:bg-white/90 px-8 py-6 text-lg font-semibold shadow-xl"
@@ -109,6 +111,7 @@ export function Hero() {
                     </Button>
                   </Link>
                   <Button
+                    onClick={() => router.push(`/products/${slide.product_id}`)}
                     size="lg"
                     variant="outline"
                     className="border-2 bg-transparent border-white text-white hover:bg-white/10 px-8 py-6 text-lg font-semibold backdrop-blur-sm"

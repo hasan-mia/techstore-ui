@@ -3,8 +3,7 @@
 import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { Heart, Star, ShoppingCart, AlertCircle, Minus, Plus, Package, Truck, Shield, ArrowLeft, Check, Info, MessageCircle, ChevronRight } from "lucide-react"
-import { dummyProducts, dummyCategories } from "@/lib/dummy-data"
+import { Heart, Star, ShoppingCart, AlertCircle, Minus, Plus, Package, Truck, Shield, ArrowLeft, Check, ChevronRight, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
@@ -14,10 +13,15 @@ import { ProductCard } from "@/components/product-card"
 import { useParams } from "next/navigation"
 import { useCartContext } from "@/contexts/cart-context"
 import { useWishlistContext } from "@/contexts/wishlist-context"
+import { useProduct, useProducts } from "@/api/product"
 
 export default function ProductDetailsPage() {
   const params = useParams()
-  const product = dummyProducts.find((p) => p.id === params.id)
+  const productId = params.id as string
+
+  // Fetch product from API
+  const { data: product, isLoading, isError, error } = useProduct(productId)
+
   const [quantity, setQuantity] = useState(1)
   const [selectedImage, setSelectedImage] = useState(0)
   const [activeTab, setActiveTab] = useState<"description" | "specs" | "reviews">("description")
@@ -25,16 +29,45 @@ export default function ProductDetailsPage() {
   const { isInWishlist, toggleWishlist } = useWishlistContext()
   const { toast } = useToast()
 
-  if (!product) {
+  // Fetch related products (same category)
+  const { data: relatedData } = useProducts(
+    {
+      category_id: product?.category?.id,
+      limit: 5
+    },
+    !!product?.category?.id
+  )
+
+  const relatedProducts = relatedData?.products?.filter(p => p.id !== productId).slice(0, 4) || []
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-slate-50 to-white">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
+          <p className="text-slate-600">Loading product...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Error or Not Found state
+  if (isError || !product) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-slate-50 to-white">
         <div className="text-center max-w-md mx-auto px-4">
           <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
             <AlertCircle className="w-10 h-10 text-red-600" />
           </div>
-          <h1 className="text-3xl font-bold mb-3 text-slate-900">Product Not Found</h1>
+          <h1 className="text-3xl font-bold mb-3 text-slate-900">
+            {isError ? "Error Loading Product" : "Product Not Found"}
+          </h1>
           <p className="text-slate-600 mb-8">
-            The product you're looking for doesn't exist or has been removed.
+            {isError
+              ? error?.message || "Something went wrong while loading the product"
+              : "The product you're looking for doesn't exist or has been removed."
+            }
           </p>
           <Link href="/products">
             <Button className="bg-blue-600 hover:bg-blue-700">
@@ -47,17 +80,12 @@ export default function ProductDetailsPage() {
     )
   }
 
-  const relatedProducts = dummyProducts
-    .filter((p) => p.categoryId === product.categoryId && p.id !== product.id)
-    .slice(0, 4)
-
-  const category = dummyCategories.find((c) => c.id === product.categoryId)
   const inCart = isInCart(product.id)
   const cartQuantity = getItemQuantity(product.id)
   const maxQuantity = product.stock - cartQuantity
 
   const handleAddToCart = () => {
-    if (product.stock === 0) {
+    if (product.stock === 0 || product.status === 'out_of_stock') {
       toast({
         title: "Out of stock",
         description: "This product is currently unavailable",
@@ -108,13 +136,19 @@ export default function ProductDetailsPage() {
   }
 
   const isNewProduct = () => {
+    const createdDate = new Date(product.created_at)
     const daysSinceCreated = Math.floor(
-      (Date.now() - product.createdAt.getTime()) / (1000 * 60 * 60 * 24)
+      (Date.now() - createdDate.getTime()) / (1000 * 60 * 60 * 24)
     )
     return daysSinceCreated <= 7
   }
 
-  const productImages = [product.image, product.image, product.image, product.image]
+  // Handle images array from API
+  const productImages = Array.isArray(product.images) && product.images.length > 0
+    ? product.images
+    : typeof product.images === "string" && product.images
+      ? [product.images]
+      : ["/placeholder.svg"]
 
   return (
     <div className="min-h-screen bg-white">
@@ -124,11 +158,11 @@ export default function ProductDetailsPage() {
           <Link href="/" className="hover:text-blue-600 transition-colors">Home</Link>
           <ChevronRight className="w-4 h-4" />
           <Link href="/products" className="hover:text-blue-600 transition-colors">Products</Link>
-          {category && (
+          {product.category && (
             <>
               <ChevronRight className="w-4 h-4" />
-              <Link href={`/products?category=${category.id}`} className="hover:text-blue-600 transition-colors">
-                {category.name}
+              <Link href={`/products?category=${product.category.id}`} className="hover:text-blue-600 transition-colors">
+                {product.category.name}
               </Link>
             </>
           )}
@@ -139,10 +173,10 @@ export default function ProductDetailsPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 mb-12">
           {/* Left Column - Images */}
           <div className="space-y-4">
-            {/* Main Image - Smaller and more professional */}
+            {/* Main Image */}
             <div className="relative bg-slate-50 rounded-2xl overflow-hidden aspect-square max-w-[550px] mx-auto">
               <Image
-                src={productImages[selectedImage] || "/placeholder.svg"}
+                src={String(productImages[selectedImage]) || "/placeholder.svg"}
                 alt={product.name}
                 fill
                 className="object-contain p-8"
@@ -154,7 +188,7 @@ export default function ProductDetailsPage() {
                 {isNewProduct() && (
                   <Badge className="bg-blue-600 text-white border-0 text-xs">New</Badge>
                 )}
-                {product.rating >= 4.5 && (
+                {Number(product.rating) >= 4.5 && (
                   <Badge className="bg-amber-500 text-white border-0 text-xs">Bestseller</Badge>
                 )}
                 {product.stock <= 5 && product.stock > 0 && (
@@ -176,30 +210,32 @@ export default function ProductDetailsPage() {
               </Button>
             </div>
 
-            {/* Thumbnail Gallery - Compact */}
-            <div className="flex gap-3 max-w-[550px] mx-auto">
-              {productImages.map((img, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => setSelectedImage(idx)}
-                  className={`relative w-20 h-20 rounded-xl overflow-hidden border-2 transition-all flex-shrink-0 ${selectedImage === idx
-                    ? "border-blue-600 shadow-md"
-                    : "border-slate-200 hover:border-slate-300"
-                    }`}
-                >
-                  <Image src={img || "/placeholder.svg"} alt={`View ${idx + 1}`} fill className="object-contain p-2" />
-                </button>
-              ))}
-            </div>
+            {/* Thumbnail Gallery */}
+            {productImages.length > 1 && (
+              <div className="flex gap-3 max-w-[550px] mx-auto overflow-x-auto">
+                {productImages.map((img: any, idx: number) => (
+                  <button
+                    key={idx}
+                    onClick={() => setSelectedImage(idx)}
+                    className={`relative w-20 h-20 rounded-xl overflow-hidden border-2 transition-all flex-shrink-0 ${selectedImage === idx
+                      ? "border-blue-600 shadow-md"
+                      : "border-slate-200 hover:border-slate-300"
+                      }`}
+                  >
+                    <Image src={img || "/placeholder.svg"} alt={`View ${idx + 1}`} fill className="object-contain p-2" />
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Right Column - Product Info */}
           <div className="space-y-6">
             {/* Category */}
-            {category && (
-              <Link href={`/products?category=${category.id}`}>
+            {product.category && (
+              <Link href={`/products?category=${product.category.id}`}>
                 <Badge variant="secondary" className="hover:bg-slate-200 transition-colors text-xs">
-                  {category.name}
+                  {product.category.name}
                 </Badge>
               </Link>
             )}
@@ -217,7 +253,7 @@ export default function ProductDetailsPage() {
                     {Array.from({ length: 5 }).map((_, i) => (
                       <Star
                         key={i}
-                        className={`w-4 h-4 ${i < Math.floor(product.rating)
+                        className={`w-4 h-4 ${i < Math.floor(Number(product.rating))
                           ? "fill-amber-400 text-amber-400"
                           : "text-slate-300"
                           }`}
@@ -236,10 +272,10 @@ export default function ProductDetailsPage() {
             <div className="py-4 border-y border-slate-200">
               <div className="flex items-baseline gap-3 mb-3">
                 <span className="text-4xl font-bold text-slate-900">
-                  {formatPrice(product.price)}
+                  {formatPrice(parseFloat(product.price))}
                 </span>
               </div>
-              {product.stock > 0 ? (
+              {product.stock > 0 && product.status !== 'out_of_stock' ? (
                 <Badge className="bg-green-50 text-green-700 hover:bg-green-50 border border-green-200">
                   <Check className="w-3 h-3 mr-1" />
                   In Stock ({product.stock} available)
@@ -263,53 +299,55 @@ export default function ProductDetailsPage() {
             )}
 
             {/* Quantity Selector */}
-            <div>
-              <label className="text-sm font-semibold text-slate-900 mb-2 block">Quantity</label>
-              <div className="flex items-center gap-4">
-                <div className="flex items-center border-2 border-slate-200 rounded-xl overflow-hidden bg-white">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={decrementQuantity}
-                    disabled={quantity <= 1}
-                    className="h-12 w-12 rounded-none hover:bg-slate-50"
-                  >
-                    <Minus className="w-4 h-4" />
-                  </Button>
-                  <input
-                    type="number"
-                    min="1"
-                    max={maxQuantity}
-                    value={quantity}
-                    onChange={(e) => {
-                      const val = Number.parseInt(e.target.value) || 1
-                      setQuantity(Math.min(Math.max(1, val), maxQuantity))
-                    }}
-                    className="w-16 text-center border-x-2 border-slate-200 h-12 text-base font-bold focus:outline-none"
-                  />
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={incrementQuantity}
-                    disabled={quantity >= maxQuantity}
-                    className="h-12 w-12 rounded-none hover:bg-slate-50"
-                  >
-                    <Plus className="w-4 h-4" />
-                  </Button>
+            {product.stock > 0 && product.status !== 'out_of_stock' && (
+              <div>
+                <label className="text-sm font-semibold text-slate-900 mb-2 block">Quantity</label>
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center border-2 border-slate-200 rounded-xl overflow-hidden bg-white">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={decrementQuantity}
+                      disabled={quantity <= 1}
+                      className="h-12 w-12 rounded-none hover:bg-slate-50"
+                    >
+                      <Minus className="w-4 h-4" />
+                    </Button>
+                    <input
+                      type="number"
+                      min="1"
+                      max={maxQuantity}
+                      value={quantity}
+                      onChange={(e) => {
+                        const val = Number.parseInt(e.target.value) || 1
+                        setQuantity(Math.min(Math.max(1, val), maxQuantity))
+                      }}
+                      className="w-16 text-center border-x-2 border-slate-200 h-12 text-base font-bold focus:outline-none"
+                    />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={incrementQuantity}
+                      disabled={quantity >= maxQuantity}
+                      className="h-12 w-12 rounded-none hover:bg-slate-50"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  {maxQuantity < 10 && maxQuantity > 0 && (
+                    <p className="text-sm text-orange-600 font-medium">
+                      Only {maxQuantity} more available
+                    </p>
+                  )}
                 </div>
-                {maxQuantity < 10 && maxQuantity > 0 && (
-                  <p className="text-sm text-orange-600 font-medium">
-                    Only {maxQuantity} more available
-                  </p>
-                )}
               </div>
-            </div>
+            )}
 
             {/* Action Buttons */}
             <div className="flex gap-3">
               <Button
                 onClick={handleAddToCart}
-                disabled={product.stock === 0}
+                disabled={product.stock === 0 || product.status === 'out_of_stock'}
                 size="lg"
                 className="flex-1 bg-blue-600 hover:bg-blue-700 h-14 text-base font-semibold shadow-sm hover:shadow-md"
               >
@@ -412,16 +450,16 @@ export default function ProductDetailsPage() {
               <div className="max-w-2xl grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
                   <div className="flex justify-between py-3 border-b border-slate-100">
-                    <span className="text-slate-600 font-medium">Brand</span>
-                    <span className="font-semibold text-slate-900">Premium</span>
-                  </div>
-                  <div className="flex justify-between py-3 border-b border-slate-100">
                     <span className="text-slate-600 font-medium">Category</span>
-                    <span className="font-semibold text-slate-900">{category?.name}</span>
+                    <span className="font-semibold text-slate-900">{product.category?.name}</span>
                   </div>
                   <div className="flex justify-between py-3 border-b border-slate-100">
                     <span className="text-slate-600 font-medium">Stock</span>
                     <span className="font-semibold text-slate-900">{product.stock} units</span>
+                  </div>
+                  <div className="flex justify-between py-3 border-b border-slate-100">
+                    <span className="text-slate-600 font-medium">Status</span>
+                    <span className="font-semibold text-slate-900 capitalize">{product.status}</span>
                   </div>
                 </div>
                 <div className="space-y-4">
@@ -450,7 +488,7 @@ export default function ProductDetailsPage() {
                       {Array.from({ length: 5 }).map((_, i) => (
                         <Star
                           key={i}
-                          className={`w-5 h-5 ${i < Math.floor(product.rating)
+                          className={`w-5 h-5 ${i < Math.floor(Number(product.rating))
                             ? "fill-amber-400 text-amber-400"
                             : "text-slate-300"
                             }`}
@@ -489,8 +527,8 @@ export default function ProductDetailsPage() {
           <div>
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold text-slate-900">You May Also Like</h2>
-              {category && (
-                <Link href={`/products?category=${category.id}`}>
+              {product.category && (
+                <Link href={`/products?category=${product.category.id}`}>
                   <Button variant="outline" size="sm">
                     View All
                     <ChevronRight className="w-4 h-4 ml-1" />
@@ -499,7 +537,7 @@ export default function ProductDetailsPage() {
               )}
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {relatedProducts.map((p) => (
+              {relatedProducts && relatedProducts?.map((p) => (
                 <ProductCard key={p.id} product={p} />
               ))}
             </div>
