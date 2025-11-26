@@ -12,6 +12,7 @@ export const dummyUsers: User[] = [
   {
     id: "1",
     email: "user@example.com",
+    avatar: "/user-avatar.png",
     name: "John Doe",
     role: "USER",
     phone: "+1 (555) 123-4567",
@@ -21,6 +22,7 @@ export const dummyUsers: User[] = [
   {
     id: "2",
     email: "admin@example.com",
+    avatar: "/user-avatar.png",
     name: "Admin User",
     role: "ADMIN",
     phone: "+1 (555) 987-6543",
@@ -164,7 +166,8 @@ export const heroSlides = [
     image: "/macbook-pro.jpg",
     bgColor: "from-slate-900 to-slate-700",
     cta: "Shop Now",
-    ctaLink: "/products/1",
+    category_id: "1",
+    product_id: "1",
     price: "$1,999",
     badge: "New Arrival"
   },
@@ -176,7 +179,8 @@ export const heroSlides = [
     image: "/iphone-15.jpg",
     bgColor: "from-blue-900 to-blue-600",
     cta: "Discover More",
-    ctaLink: "/products/3",
+    category_id: "3",
+    product_id: "3",
     price: "$999",
     badge: "Best Seller"
   },
@@ -188,7 +192,8 @@ export const heroSlides = [
     image: "/diverse-people-listening-headphones.png",
     bgColor: "from-purple-900 to-purple-600",
     cta: "Shop Audio",
-    ctaLink: "/category/4",
+    category_id: "4",
+    product_id: "4",
     price: "From $299",
     badge: "Hot Deal"
   },
@@ -200,7 +205,8 @@ export const heroSlides = [
     image: "/samsung-galaxy.jpg",
     bgColor: "from-emerald-900 to-emerald-600",
     cta: "Learn More",
-    ctaLink: "/products/4",
+    category_id: "4",
+    product_id: "5",
     price: "$899",
     badge: "Featured"
   }

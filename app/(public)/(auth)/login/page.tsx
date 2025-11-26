@@ -38,9 +38,11 @@ export default function LoginPage() {
     setLoading(true)
 
     try {
-      const result = login(email, password)
+      const result = await login(email, password)
 
-      if (result.success) {
+      console.log(result)
+
+      if (result) {
         toast({
           title: "Welcome back! 👋",
           description: `Logged in as ${result.user.name}`,
@@ -65,8 +67,8 @@ export default function LoginPage() {
   }
 
   const handleQuickLogin = (role: "USER" | "ADMIN") => {
-    const testEmail = role === "ADMIN" ? "admin@example.com" : "user@example.com"
-    const testPassword = "password123"
+    const testEmail = role === "ADMIN" ? "admin@gmail.com" : "user@gmail.com"
+    const testPassword = role === "ADMIN" ? "admin@123" : "user@123"
 
     setLoading(true)
     const result = login(testEmail, testPassword)
@@ -286,7 +288,7 @@ export default function LoginPage() {
                     </div>
                     <div className="text-left">
                       <div className="font-semibold text-slate-900">User Account</div>
-                      <div className="text-sm text-slate-600">user@example.com</div>
+                      <div className="text-sm text-slate-600">user@gmail.com</div>
                     </div>
                   </div>
                   <ArrowRight className="w-5 h-5 text-slate-400 group-hover:text-blue-600 group-hover:translate-x-1 transition-all" />
@@ -302,7 +304,7 @@ export default function LoginPage() {
                     </div>
                     <div className="text-left">
                       <div className="font-semibold text-slate-900">Admin Account</div>
-                      <div className="text-sm text-slate-600">admin@example.com</div>
+                      <div className="text-sm text-slate-600">admin@gmail.com</div>
                     </div>
                   </div>
                   <ArrowRight className="w-5 h-5 text-slate-400 group-hover:text-red-600 group-hover:translate-x-1 transition-all" />

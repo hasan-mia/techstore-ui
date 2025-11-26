@@ -1,93 +1,108 @@
 "use client"
 
-import { useState, useCallback, useEffect } from "react"
-import type { User } from "@/lib/types"
-import { dummyUsers } from "@/lib/dummy-data"
+import { useCallback, useEffect } from "react"
+import { useAuthStore } from "@/store/useAuthStore"
+import { useLogin, useRegister, useUserInfo } from "@/api/auth"
+import { useQueryClient } from "@tanstack/react-query"
 
 export function useAuth() {
-  const [user, setUser] = useState<User | null>(null)
-  const [mounted, setMounted] = useState(false)
-  const [loading, setLoading] = useState(true)
+  const { token, user, setToken, setUser, logout: clearAuth } = useAuthStore()
+  const queryClient = useQueryClient()
 
-  // Load user from localStorage on mount
+  // Fetch user info when token exists
+  const { data: userInfo, isLoading, refetch } = useUserInfo(!!token)
+
+  // Update user in store when fetched
   useEffect(() => {
-    setMounted(true)
-    const stored = localStorage.getItem("user")
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored)
-        setUser({
-          ...parsed,
-          createdAt: new Date(parsed.createdAt)
-        })
-      } catch (error) {
-        console.error("Failed to parse user from localStorage:", error)
-        localStorage.removeItem("user")
+    if (userInfo) {
+      setUser({
+        id: userInfo.id,
+        email: userInfo.email,
+        name: userInfo.name,
+        role: userInfo.role,
+        avatar: userInfo.avatar,
+        phone: userInfo.phone,
+        address: userInfo.address,
+        createdAt: new Date(userInfo.created_at),
+      })
+    }
+  }, [userInfo, setUser])
+
+  const loginMutation = useLogin()
+  const registerMutation = useRegister()
+
+  const login = useCallback(async (email: string, password: string) => {
+    try {
+      const result = await loginMutation.mutateAsync({ email, password })
+
+      if (result?.token) {
+        setToken(result.token)
+        // Refetch user info after successful login
+        await refetch()
+        return { success: true, user: userInfo }
+      }
+
+      return { success: false, error: "No token received" }
+    } catch (error: any) {
+      console.error("Login error:", error)
+      return {
+        success: false,
+        error: error?.message || "Login failed"
       }
     }
-    setLoading(false)
-  }, [])
+  }, [loginMutation, setToken, refetch, userInfo])
 
-  // Save user to localStorage whenever it changes
-  useEffect(() => {
-    if (mounted) {
-      if (user) {
-        localStorage.setItem("user", JSON.stringify(user))
-      } else {
-        localStorage.removeItem("user")
+  const register = useCallback(async (data: {
+    email: string
+    password: string
+    name: string
+  }) => {
+    try {
+
+
+      const result = await registerMutation.mutateAsync(data)
+
+      if (result?.token) {
+        setToken(result.token)
+        // Refetch user info after successful registration
+        await refetch()
+        return { success: true, user: userInfo }
+      }
+
+      return { success: false, error: "No token received" }
+    } catch (error: any) {
+      console.error("Registration error:", error)
+      return {
+        success: false,
+        error: error?.message || "Registration failed"
       }
     }
-  }, [user, mounted])
-
-  const login = useCallback((email: string, password: string) => {
-    // Validate with dummy users
-    const foundUser = dummyUsers.find(u => u.email === email)
-
-    if (foundUser) {
-      // In production, verify password here
-      setUser(foundUser)
-      localStorage.setItem("user", JSON.stringify(foundUser))
-      return { success: true, user: foundUser }
-    }
-
-    // Mock login for any email if not in dummy data
-    const mockUser: User = {
-      id: email.includes("admin") ? "2" : "1",
-      email,
-      name: email.split("@")[0],
-      role: email.includes("admin") ? "ADMIN" : "USER",
-      createdAt: new Date(),
-    }
-    setUser(mockUser)
-    localStorage.setItem("user", JSON.stringify(mockUser))
-    return { success: true, user: mockUser }
-  }, [])
+  }, [registerMutation, setToken, refetch, userInfo])
 
   const logout = useCallback(() => {
-    setUser(null)
-    localStorage.removeItem("user")
+    clearAuth()
+    queryClient.clear()
+    // Clear other local storage items
     localStorage.removeItem("cart")
     localStorage.removeItem("wishlist")
-  }, [])
+  }, [clearAuth, queryClient])
 
-  const updateUser = useCallback((updates: Partial<User>) => {
+  const updateUser = useCallback((updates: Partial<typeof user>) => {
     if (user) {
-      const updatedUser = { ...user, ...updates }
-      setUser(updatedUser)
-      localStorage.setItem("user", JSON.stringify(updatedUser))
+      setUser({ ...user, ...updates })
     }
-  }, [user])
+  }, [user, setUser])
 
   // Role-based checks
   const isAdmin = user?.role === "ADMIN"
   const isUser = user?.role === "USER"
-  const isAuthenticated = !!user
+  const isAuthenticated = !!token && !!user
 
   // Role-based permissions
   const hasPermission = useCallback((requiredRole: "USER" | "ADMIN") => {
     if (!user) return false
-    if (requiredRole === "USER") return true // Both USER and ADMIN can access USER routes
-    return user.role === "ADMIN" // Only ADMIN can access ADMIN routes
+    if (requiredRole === "USER") return true
+    return user.role === "ADMIN"
   }, [user])
 
   const canAccessAdminPanel = isAdmin
@@ -99,6 +114,7 @@ export function useAuth() {
   return {
     user,
     login,
+    register,
     logout,
     updateUser,
     isAuthenticated,
@@ -110,7 +126,9 @@ export function useAuth() {
     canManageOrders,
     canManageUsers,
     canViewAnalytics,
-    mounted,
-    loading,
+    mounted: true,
+    loading: isLoading || loginMutation.isPending || registerMutation.isPending,
+    loginError: loginMutation.error,
+    registerError: registerMutation.error,
   }
 }

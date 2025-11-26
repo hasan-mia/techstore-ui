@@ -100,7 +100,7 @@ export function Hero() {
 
                 {/* CTA Buttons */}
                 <div className="flex gap-4 pt-4">
-                  <Link href={slide.ctaLink}>
+                  <Link href={slide.category_id ? `/categories/${slide.category_id}` : `/products/${slide.product_id}`}>
                     <Button
                       size="lg"
                       className="bg-white text-slate-900 hover:bg-white/90 px-8 py-6 text-lg font-semibold shadow-xl"

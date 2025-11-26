@@ -1,14 +1,68 @@
 // User Types
 export interface User {
-  id: string
-  email: string
-  name: string
-  phone: string
-  address: string
-  role: "USER" | "ADMIN"
-  createdAt: Date
+  id: string;
+  email: string;
+  name: string;
+  role: "USER" | "ADMIN";
+  avatar?: string | null;
+  phone?: string | null;
+  address?: string | null;
+  createdAt: Date;
 }
 
+// Login Response types
+export interface LoginResponse {
+  success: boolean;
+  message: string;
+  user: {
+    id: string;
+    email: string;
+    name: string;
+    role_id: string;
+    role: "USER" | "ADMIN";
+    avatar: string | null;
+  };
+  permissions: string[];
+  accessToken: string;
+  refreshToken: string;
+}
+
+// Register Response types
+export interface RegisterResponse {
+  success: boolean;
+  message: string;
+  data: {
+    user: {
+      id: string;
+      email: string;
+      name: string;
+      role_id: string;
+      role: "USER" | "ADMIN";
+      avatar: string | null;
+    };
+    permissions: string[];
+    accessToken: string;
+    refreshToken: string;
+  };
+}
+
+export interface UserInfoResponse {
+  success: boolean;
+  message: string;
+  data: {
+    id: string;
+    avatar: string | null;
+    email: string;
+    name: string;
+    phone: string | null;
+    role_id: string;
+    address: string | null;
+    created_at: string;
+    updated_at: string;
+    role: "USER" | "ADMIN";
+    permissions: string[];
+  };
+}
 // Product Types
 export interface Category {
   id: string
