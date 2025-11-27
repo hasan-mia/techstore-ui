@@ -11,6 +11,7 @@ import { dummyOrders, dummyProducts } from "@/lib/dummy-data"
 import Link from "next/link"
 import Image from "next/image"
 import { useAuthContext } from "@/contexts/auth-context"
+import Spinner from "@/components/Spinner"
 
 // Helper to get full order with product details
 const getOrdersWithProducts = (userId: string) => {
@@ -81,16 +82,7 @@ export default function OrdersPage() {
 
   if (!mounted || loading) {
     return (
-      <div className="min-h-screen bg-slate-50 py-12">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-center py-20">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-slate-600">Loading your orders...</p>
-            </div>
-          </div>
-        </div>
-      </div>
+      <Spinner />
     )
   }
 
@@ -231,9 +223,9 @@ export default function OrdersPage() {
                     {order.items.map((item) => (
                       <div key={item.id} className="flex items-center gap-4">
                         <div className="relative w-20 h-20 bg-slate-100 rounded-lg overflow-hidden flex-shrink-0">
-                          {item.product?.image ? (
+                          {item.product?.images ? (
                             <Image
-                              src={item.product.image}
+                              src={item.product.images[0]}
                               alt={item.product.name || "Product"}
                               fill
                               className="object-cover"

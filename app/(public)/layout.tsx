@@ -3,7 +3,7 @@ import { Analytics } from "@vercel/analytics/next"
 import { Toaster } from "@/components/ui/toaster"
 import Footer from "@/components/footer"
 import { CartProvider } from "@/contexts/cart-context"
-import Navbar from "@/components/navbar"
+import Navbar from "@/components/navbar/navbar"
 import { WishlistProvider } from "@/contexts/wishlist-context"
 import { AuthProvider } from "@/contexts/auth-context"
 export default function PublicLayout({

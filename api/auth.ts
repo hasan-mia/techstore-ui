@@ -1,5 +1,5 @@
 import { http } from '../config/http';
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 /**
  * Login user
@@ -82,6 +82,52 @@ export function useLogout() {
     },
     onError: (error: any) => {
       console.error("Logout error:", error);
+    },
+  });
+}
+
+/**
+ * Fetch address Info
+ */
+export function useAddress(enabled = true) {
+  return useQuery({
+    queryKey: ["user-address"],
+    queryFn: async () => {
+      const response = await http.get("/address");
+      const { data } = response.data;
+      if (!data) throw new Error("No address data received");
+      return data;
+    },
+    enabled,
+    retry: false,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
+
+/**
+ * upsert address Info
+ */
+export function useUpsertAddress() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      address,
+      city,
+      state,
+      zip,
+    }: { address: string; city: string; state: string; zip: string }) => {
+      const response = await http.post("/address", { address, city, state, zip });
+      if (!response) throw new Error("Failed to update address");
+      return response.data;
+    },
+    onSuccess: (data) => {
+      // Update the cached query instantly
+      queryClient.setQueryData(["user-address"], data);
+    },
+    onError: (error: any) => {
+      console.error("address error:", error);
+      throw new Error(error?.response?.data?.message || error?.message || "Failed to update address");
     },
   });
 }

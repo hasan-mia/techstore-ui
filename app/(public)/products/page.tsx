@@ -110,17 +110,6 @@ function ProductsContent() {
               <h1 className="text-3xl lg:text-4xl font-bold text-slate-900 mb-2">
                 {searchQuery ? `Search Results for "${searchQuery}"` : selectedCategory ? selectedCategory.name : "All Products"}
               </h1>
-              <p className="text-slate-600">
-                {isLoading ? (
-                  "Loading products..."
-                ) : (
-                  <>
-                    {searchQuery ? `Found ${filtered.length} ${filtered.length === 1 ? "product" : "products"}` :
-                      `Discover ${data?.pagination?.total || 0} ${data?.pagination?.total === 1 ? "product" : "products"}`}
-                    {selectedCategory && !searchQuery && ` in ${selectedCategory.name}`}
-                  </>
-                )}
-              </p>
             </div>
 
             {/* View Controls */}
@@ -388,7 +377,6 @@ export default function ProductsPage() {
         <div className="min-h-screen flex items-center justify-center">
           <div className="text-center">
             <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-            <p className="text-slate-600">Loading products...</p>
           </div>
         </div>
       }

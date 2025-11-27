@@ -1,51 +1,60 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import Link from "next/link"
-import Image from "next/image"
-import { ChevronLeft, ChevronRight } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { heroSlides } from "@/lib/dummy-data"
-import { useRouter } from "next/navigation"
-
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
+import { useActiveHeroes } from "@/api/hero"; // your custom hook
 
 export function Hero() {
   const router = useRouter();
-  const [currentSlide, setCurrentSlide] = useState(0)
-  const [isAutoPlaying, setIsAutoPlaying] = useState(true)
+  const { data, isLoading, isFetching, error } = useActiveHeroes();
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [isAutoPlaying, setIsAutoPlaying] = useState(true);
 
+  const slides = data?.data ?? [];
+
+  // Auto play effect
   useEffect(() => {
-    if (!isAutoPlaying) return
+    if (!isAutoPlaying || slides.length === 0) return;
 
     const interval = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % heroSlides.length)
-    }, 5000)
+      setCurrentSlide((prev) => (prev + 1) % slides.length);
+    }, 5000);
 
-    return () => clearInterval(interval)
-  }, [isAutoPlaying])
+    return () => clearInterval(interval);
+  }, [isAutoPlaying, slides.length]);
 
   const goToSlide = (index: number) => {
-    setCurrentSlide(index)
-    setIsAutoPlaying(false)
-    setTimeout(() => setIsAutoPlaying(true), 10000)
+    setCurrentSlide(index);
+    setIsAutoPlaying(false);
+    setTimeout(() => setIsAutoPlaying(true), 10000);
+  };
+
+  const nextSlide = () => goToSlide((currentSlide + 1) % slides.length);
+  const prevSlide = () => goToSlide((currentSlide - 1 + slides.length) % slides.length);
+
+  if (isLoading || isFetching) {
+    return (
+      <div className="min-h-[600px] flex items-center justify-center">
+        <p className="text-white text-xl">Loading hero slides...</p>
+      </div>
+    );
   }
 
-  const nextSlide = () => {
-    setCurrentSlide((prev) => (prev + 1) % heroSlides.length)
-    setIsAutoPlaying(false)
-    setTimeout(() => setIsAutoPlaying(true), 10000)
-  }
-
-  const prevSlide = () => {
-    setCurrentSlide((prev) => (prev - 1 + heroSlides.length) % heroSlides.length)
-    setIsAutoPlaying(false)
-    setTimeout(() => setIsAutoPlaying(true), 10000)
+  if (error || slides.length === 0) {
+    return (
+      <div className="min-h-[600px] flex items-center justify-center">
+        <p className="text-white text-xl">Failed to load hero slides.</p>
+      </div>
+    );
   }
 
   return (
     <section className="relative h-[600px] overflow-hidden bg-slate-900">
-      {/* Slides */}
-      {heroSlides.map((slide, index) => (
+      {slides.map((slide, index) => (
         <div
           key={slide.id}
           className={`absolute inset-0 transition-all duration-700 ease-in-out ${index === currentSlide
@@ -56,9 +65,9 @@ export function Hero() {
             }`}
         >
           {/* Background Gradient */}
-          <div className={`absolute inset-0 bg-gradient-to-r ${slide.bgColor}`} />
+          <div className={`absolute inset-0 bg-gradient-to-r ${slide.bg_color}`} />
 
-          {/* Background Image with Overlay */}
+          {/* Background Image */}
           <div className="absolute inset-0 opacity-20">
             <Image
               src={slide.image}
@@ -73,36 +82,30 @@ export function Hero() {
           <div className="relative h-full container mx-auto px-4">
             <div className="flex items-center h-full">
               <div className="max-w-2xl text-white space-y-6">
-                {/* Badge */}
-                <div className="inline-block">
-                  <span className="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full text-sm font-semibold border border-white/30">
-                    {slide.badge}
-                  </span>
-                </div>
+                {slide.badge && (
+                  <div className="inline-block">
+                    <span className="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full text-sm font-semibold border border-white/30">
+                      {slide.badge}
+                    </span>
+                  </div>
+                )}
 
-                {/* Title */}
                 <h1 className="text-5xl md:text-7xl font-bold leading-tight animate-fade-in">
                   {slide.title}
                 </h1>
 
-                {/* Subtitle */}
-                <p className="text-2xl md:text-3xl font-medium opacity-90">
-                  {slide.subtitle}
-                </p>
+                <p className="text-2xl md:text-3xl font-medium opacity-90">{slide.subtitle}</p>
+                <p className="text-lg md:text-xl opacity-80 max-w-xl">{slide.description}</p>
+                <div className="text-3xl font-bold">{slide.price}</div>
 
-                {/* Description */}
-                <p className="text-lg md:text-xl opacity-80 max-w-xl">
-                  {slide.description}
-                </p>
-
-                {/* Price */}
-                <div className="text-3xl font-bold">
-                  {slide.price}
-                </div>
-
-                {/* CTA Buttons */}
                 <div className="flex gap-4 pt-4">
-                  <Link href={slide.category_id ? `/products?category=${slide.category_id}` : `/products/${slide.product_id}`}>
+                  <Link
+                    href={
+                      slide.category_id
+                        ? `/products?category=${slide.category_id}`
+                        : `/products/${slide.product_id}`
+                    }
+                  >
                     <Button
                       size="lg"
                       className="bg-white text-slate-900 hover:bg-white/90 px-8 py-6 text-lg font-semibold shadow-xl"
@@ -121,7 +124,7 @@ export function Hero() {
                 </div>
               </div>
 
-              {/* Product Image (Right Side) */}
+              {/* Product Image */}
               <div className="hidden lg:block absolute right-10 top-1/2 -translate-y-1/2 w-96 h-96">
                 <div className="relative w-full h-full animate-float">
                   <Image
@@ -156,13 +159,11 @@ export function Hero() {
 
       {/* Slide Indicators */}
       <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-3 z-10">
-        {heroSlides.map((_, index) => (
+        {slides.map((_, index) => (
           <button
             key={index}
             onClick={() => goToSlide(index)}
-            className={`transition-all ${index === currentSlide
-              ? "w-12 bg-white"
-              : "w-3 bg-white/50 hover:bg-white/70"
+            className={`transition-all ${index === currentSlide ? "w-12 bg-white" : "w-3 bg-white/50 hover:bg-white/70"
               } h-3 rounded-full`}
             aria-label={`Go to slide ${index + 1}`}
           />
@@ -175,23 +176,38 @@ export function Hero() {
           className="h-full bg-white transition-all duration-300 ease-linear"
           style={{
             width: isAutoPlaying ? "100%" : "0%",
-            animation: isAutoPlaying ? "progress 5s linear" : "none"
+            animation: isAutoPlaying ? "progress 5s linear" : "none",
           }}
         />
       </div>
 
       <style jsx>{`
         @keyframes progress {
-          from { width: 0%; }
-          to { width: 100%; }
+          from {
+            width: 0%;
+          }
+          to {
+            width: 100%;
+          }
         }
         @keyframes fade-in {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
         }
         @keyframes float {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-20px); }
+          0%,
+          100% {
+            transform: translateY(0px);
+          }
+          50% {
+            transform: translateY(-20px);
+          }
         }
         .animate-fade-in {
           animation: fade-in 0.8s ease-out;
@@ -201,5 +217,5 @@ export function Hero() {
         }
       `}</style>
     </section>
-  )
+  );
 }

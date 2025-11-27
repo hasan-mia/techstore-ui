@@ -1,5 +1,3 @@
-// hooks/useProducts.ts
-
 import { Product, ProductFilters, ProductsResponse } from '@/lib/types';
 import { http } from '../config/http';
 import { useQuery } from "@tanstack/react-query";

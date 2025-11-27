@@ -63,22 +63,69 @@ export interface UserInfoResponse {
     permissions: string[];
   };
 }
-// Product Types
-export interface Category {
+
+export interface Hero {
   id: string
-  name: string
+  title: string
+  subtitle: string
   description: string
   image: string
+  bg_color: string
+  cta: string
+  category_id?: string | null
+  product_id?: string | null
+  price: string
+  badge?: string | null
+  order: number
+  status: "active" | "inactive"
+  created_at: string
+  updated_at: string
+  product?: {
+    id: string
+    name: string
+    price: string
+    images: string[]
+    stock: number
+    status: string
+  }
+  category?: {
+    id: string
+    name: string
+    description?: string
+  }
 }
-// lib/types.ts (or wherever your types are)
 
+export interface HeroResponse {
+  success: boolean
+  message: string
+  data: Hero[]
+}
+
+
+// Category Types
 export interface Category {
   id: string;
   name: string;
-  description: string;
-  image: string;
+  description?: string;
+  icon?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
+export interface CategoryResponse {
+  success: boolean;
+  message: string;
+  categories: Category[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
+
+
+// Product Types
 export interface Product {
   data: Product | undefined;
   id: string;
