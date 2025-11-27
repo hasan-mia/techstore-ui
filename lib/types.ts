@@ -171,10 +171,11 @@ export interface ProductFilters {
 export interface CartItem {
   id: string
   productId: string
-  product?: Product
+  product: Product
   quantity: number
   price: number
 }
+
 
 // Order Types
 export enum OrderStatus {

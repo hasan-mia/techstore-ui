@@ -1,62 +1,156 @@
 "use client"
 
-import type React from "react"
-
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Separator } from "@/components/ui/separator"
 import { useToast } from "@/hooks/use-toast"
 import { useAuthContext } from "@/contexts/auth-context"
-import { User, Mail, Phone, MapPin, Calendar, Shield } from "lucide-react"
+import { User, Mail, Phone, MapPin, Calendar, Shield, Loader2, AlertCircle } from "lucide-react"
+import { useUpdateProfile, useGetAddress, useUpsertAddress } from "@/api/auth"
 
 export default function ProfilePage() {
   const { user } = useAuthContext()
   const { toast } = useToast()
-  const [isEditing, setIsEditing] = useState(false)
-  const [formData, setFormData] = useState({
+
+  // Fetch address data
+  const { data: addressData, isLoading: isLoadingAddress, error: addressError } = useGetAddress()
+
+  // Mutations
+  const updateProfileMutation = useUpdateProfile()
+  const upsertAddressMutation = useUpsertAddress()
+
+  // State management
+  const [isEditingProfile, setIsEditingProfile] = useState(false)
+  const [isEditingAddress, setIsEditingAddress] = useState(false)
+
+  const [profileData, setProfileData] = useState({
     name: user?.name || "",
     email: user?.email || "",
     phone: user?.phone || "",
-    address: user?.address || "",
   })
 
+  const [addressFormData, setAddressFormData] = useState({
+    address: "",
+    city: "",
+    state: "",
+    zip: "",
+    phone: "",
+  })
+
+  // Sync user data with form
   useEffect(() => {
     if (user) {
-      setFormData({
+      setProfileData({
         name: user.name || "",
         email: user.email || "",
         phone: user.phone || "",
-        address: user.address || "",
       })
     }
   }, [user])
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData((prev) => ({
+  // Sync address data with form
+  useEffect(() => {
+    if (addressData?.data) {
+      setAddressFormData({
+        address: addressData.data.address || "",
+        city: addressData.data.city || "",
+        state: addressData.data.state || "",
+        zip: addressData.data.zip || "",
+        phone: addressData.data.phone || "",
+      })
+    }
+  }, [addressData])
+
+  // Show form when editing and no address exists
+  useEffect(() => {
+    if (isEditingAddress && !addressData?.data && !isLoadingAddress) {
+      // Keep form empty for new address
+      setAddressFormData({
+        address: "",
+        city: "",
+        state: "",
+        zip: "",
+        phone: "",
+      })
+    }
+  }, [isEditingAddress, addressData, isLoadingAddress])
+
+  // Handlers for profile
+  const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setProfileData((prev) => ({
       ...prev,
       [e.target.name]: e.target.value,
     }))
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsEditing(false)
-    toast({
-      title: "Profile updated successfully",
-      description: "Your profile information has been saved.",
-    })
+  const handleProfileSubmit = async () => {
+    try {
+      await updateProfileMutation.mutateAsync(profileData)
+      setIsEditingProfile(false)
+      toast({
+        title: "Success",
+        description: "Profile updated successfully",
+      })
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update profile",
+        variant: "destructive",
+      })
+    }
   }
 
-  const handleCancel = () => {
-    setFormData({
+  const handleProfileCancel = () => {
+    setProfileData({
       name: user?.name || "",
       email: user?.email || "",
       phone: user?.phone || "",
-      address: user?.address || "",
     })
-    setIsEditing(false)
+    setIsEditingProfile(false)
+  }
+
+  // Handlers for address
+  const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setAddressFormData((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }))
+  }
+
+  const handleAddressSubmit = async () => {
+    try {
+      await upsertAddressMutation.mutateAsync({
+        address: addressFormData.address,
+        city: addressFormData.city,
+        state: addressFormData.state,
+        zip: addressFormData.zip,
+      })
+      setIsEditingAddress(false)
+      toast({
+        title: "Success",
+        description: "Address updated successfully",
+      })
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update address",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleAddressCancel = () => {
+    if (addressData?.data) {
+      setAddressFormData({
+        address: addressData.data.address || "",
+        city: addressData.data.city || "",
+        state: addressData.data.state || "",
+        zip: addressData.data.zip || "",
+        phone: addressData.data.phone || "",
+      })
+    }
+    setIsEditingAddress(false)
   }
 
   return (
@@ -99,7 +193,7 @@ export default function ProfilePage() {
                   <Shield className="h-4 w-4" />
                   <span>Account Role</span>
                 </div>
-                <p className="font-medium text-lg capitalize">{user?.role.toLowerCase()}</p>
+                <p className="font-medium text-lg capitalize">{user?.role?.toLowerCase()}</p>
               </div>
 
               <div className="space-y-1">
@@ -119,26 +213,26 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
 
-        {/* Contact & Delivery Information Card */}
+        {/* Contact Information Card */}
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="flex items-center gap-2">
-                  <MapPin className="h-5 w-5" />
-                  Contact & Delivery Information
+                  <Phone className="h-5 w-5" />
+                  Contact Information
                 </CardTitle>
-                <CardDescription>Update your contact details and delivery address</CardDescription>
+                <CardDescription>Update your contact details</CardDescription>
               </div>
-              {!isEditing && (
-                <Button variant="outline" onClick={() => setIsEditing(true)}>
-                  Edit Information
+              {!isEditingProfile && (
+                <Button variant="outline" onClick={() => setIsEditingProfile(true)}>
+                  Edit Profile
                 </Button>
               )}
             </div>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-6">
               <div className="grid gap-6 md:grid-cols-2">
                 <div className="space-y-2">
                   <label htmlFor="name" className="text-sm font-medium flex items-center gap-2">
@@ -149,9 +243,9 @@ export default function ProfilePage() {
                     id="name"
                     name="name"
                     placeholder="John Doe"
-                    value={formData.name}
-                    onChange={handleChange}
-                    disabled={!isEditing}
+                    value={profileData.name}
+                    onChange={handleProfileChange}
+                    disabled={!isEditingProfile}
                     className="bg-background"
                   />
                 </div>
@@ -166,15 +260,13 @@ export default function ProfilePage() {
                     name="email"
                     type="email"
                     placeholder="john@example.com"
-                    value={formData.email}
-                    onChange={handleChange}
-                    disabled={!isEditing}
+                    value={profileData.email}
+                    onChange={handleProfileChange}
+                    disabled={!isEditingProfile}
                     className="bg-background"
                   />
                 </div>
               </div>
-
-              <Separator />
 
               <div className="space-y-2">
                 <label htmlFor="phone" className="text-sm font-medium flex items-center gap-2">
@@ -185,44 +277,170 @@ export default function ProfilePage() {
                   id="phone"
                   name="phone"
                   type="tel"
-                  placeholder="+1 (555) 123-4567"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  disabled={!isEditing}
+                  placeholder="+880 1234567890"
+                  value={profileData.phone}
+                  onChange={handleProfileChange}
+                  disabled={!isEditingProfile}
                   className="bg-background"
                 />
               </div>
 
-              <div className="space-y-2">
-                <label htmlFor="address" className="text-sm font-medium flex items-center gap-2">
-                  <MapPin className="h-4 w-4" />
-                  Delivery Address
-                </label>
-                <Input
-                  id="address"
-                  name="address"
-                  placeholder="123 Main St, City, State 12345"
-                  value={formData.address}
-                  onChange={handleChange}
-                  disabled={!isEditing}
-                  className="bg-background"
-                />
-                <p className="text-xs text-muted-foreground">
-                  This address will be used as your default delivery location
-                </p>
-              </div>
-
-              {isEditing && (
+              {isEditingProfile && (
                 <div className="flex gap-3 pt-4">
-                  <Button type="submit" className="bg-primary hover:bg-primary/90">
+                  <Button
+                    onClick={handleProfileSubmit}
+                    className="bg-primary hover:bg-primary/90"
+                    disabled={updateProfileMutation.isPending}
+                  >
+                    {updateProfileMutation.isPending && (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    )}
                     Save Changes
                   </Button>
-                  <Button type="button" variant="outline" onClick={handleCancel}>
+                  <Button
+                    variant="outline"
+                    onClick={handleProfileCancel}
+                    disabled={updateProfileMutation.isPending}
+                  >
                     Cancel
                   </Button>
                 </div>
               )}
-            </form>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Delivery Address Card */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <MapPin className="h-5 w-5" />
+                  Delivery Address
+                </CardTitle>
+                <CardDescription>Manage your default delivery location</CardDescription>
+              </div>
+              {!isEditingAddress && (
+                <Button variant="outline" onClick={() => setIsEditingAddress(true)}>
+                  {addressData?.data ? "Edit Address" : "Add Address"}
+                </Button>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent>
+            {isLoadingAddress ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <label htmlFor="address" className="text-sm font-medium flex items-center gap-2">
+                    <MapPin className="h-4 w-4" />
+                    Street Address
+                  </label>
+                  <Input
+                    id="address"
+                    name="address"
+                    placeholder="123 Main Street"
+                    value={addressFormData.address}
+                    onChange={handleAddressChange}
+                    disabled={!isEditingAddress}
+                    className="bg-background"
+                  />
+                </div>
+
+                <div className="grid gap-6 md:grid-cols-3">
+                  <div className="space-y-2">
+                    <label htmlFor="city" className="text-sm font-medium">
+                      City
+                    </label>
+                    <Input
+                      id="city"
+                      name="city"
+                      placeholder="Dhaka"
+                      value={addressFormData.city}
+                      onChange={handleAddressChange}
+                      disabled={!isEditingAddress}
+                      className="bg-background"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label htmlFor="state" className="text-sm font-medium">
+                      State/Division
+                    </label>
+                    <Input
+                      id="state"
+                      name="state"
+                      placeholder="Dhaka"
+                      value={addressFormData.state}
+                      onChange={handleAddressChange}
+                      disabled={!isEditingAddress}
+                      className="bg-background"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label htmlFor="zip" className="text-sm font-medium">
+                      Postal Code
+                    </label>
+                    <Input
+                      id="zip"
+                      name="zip"
+                      placeholder="1200"
+                      value={addressFormData.zip}
+                      onChange={handleAddressChange}
+                      disabled={!isEditingAddress}
+                      className="bg-background"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label htmlFor="address_phone" className="text-sm font-medium flex items-center gap-2">
+                    <Phone className="h-4 w-4" />
+                    Contact Phone (Optional)
+                  </label>
+                  <Input
+                    id="address_phone"
+                    name="phone"
+                    type="tel"
+                    placeholder="+880 1234567890"
+                    value={addressFormData.phone}
+                    onChange={handleAddressChange}
+                    disabled={!isEditingAddress}
+                    className="bg-background"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Alternative contact number for delivery purposes
+                  </p>
+                </div>
+
+                {isEditingAddress && (
+                  <div className="flex gap-3 pt-4">
+                    <Button
+                      onClick={handleAddressSubmit}
+                      className="bg-primary hover:bg-primary/90"
+                      disabled={upsertAddressMutation.isPending}
+                    >
+                      {upsertAddressMutation.isPending && (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      )}
+                      Save Address
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={handleAddressCancel}
+                      disabled={upsertAddressMutation.isPending}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

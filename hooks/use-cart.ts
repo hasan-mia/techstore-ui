@@ -7,7 +7,6 @@ export function useCart() {
   const [items, setItems] = useState<CartItem[]>([])
   const [mounted, setMounted] = useState(false)
 
-  // Load cart from localStorage on mount
   useEffect(() => {
     setMounted(true)
     const stored = localStorage.getItem("cart")
@@ -21,7 +20,6 @@ export function useCart() {
     }
   }, [])
 
-  // Save cart to localStorage whenever it changes (only after mount)
   useEffect(() => {
     if (mounted) {
       localStorage.setItem("cart", JSON.stringify(items))
@@ -32,11 +30,8 @@ export function useCart() {
     setItems((prev) => {
       const existing = prev.find((item) => item.productId === product.id)
       if (existing) {
-        // Check if adding quantity exceeds stock
         const newQuantity = existing.quantity + quantity
-        if (newQuantity > product.stock) {
-          return prev
-        }
+        if (newQuantity > product.stock) return prev
         return prev.map((item) =>
           item.productId === product.id
             ? { ...item, quantity: newQuantity }
@@ -50,7 +45,7 @@ export function useCart() {
           productId: product.id,
           product,
           quantity,
-          price: product.price,
+          price: typeof product.price === 'string' ? parseFloat(product.price) : product.price,
         },
       ]
     })
@@ -101,3 +96,30 @@ export function useCart() {
     mounted,
   }
 }
+
+
+
+// // Update the disabled state to properly check form validity
+// <Button
+//   onClick={ handleSubmit }
+// disabled = { createOrderMutation.isPending || isLoadingAddress || !isFormValid() }
+// size = "lg"
+// className = "w-full bg-blue-600 hover:bg-blue-700 h-14 text-base font-semibold shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+//   >
+//   {
+//     createOrderMutation.isPending ? (
+//       <>
+//       <Loader2 className= "w-5 h-5 mr-2 animate-spin" />
+//       Processing...
+//     </>
+//   ) : (
+//       <>
+//       <Lock className="w-5 h-5 mr-2" />
+//     Complete Purchase({ formatPrice(finalTotal) })
+//     </>
+//     )}
+// </Button>
+
+// ==================== 4. Update Types (if needed) ====================
+// File: lib/types.ts
+

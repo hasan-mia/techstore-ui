@@ -72,6 +72,29 @@ export function useUserInfo(enabled = true) {
   });
 }
 
+
+/**
+ * upsert address Info
+ */
+export function useUpdateProfile() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: any) => {
+      const response = await http.put("/auth/profile", data);
+      if (!response) throw new Error("Failed to update profile");
+      return response.data;
+    },
+    // onSuccess: (data) => {
+    //   queryClient.setQueryData(["user-info"], data);
+    // },
+    onError: (error: any) => {
+      console.error("update profile error:", error);
+      throw new Error(error?.response?.data?.message || error?.message || "Failed to update profile");
+    },
+  });
+}
+
 /**
  * Logout user (optional - if you have a logout endpoint)
  */
@@ -89,7 +112,7 @@ export function useLogout() {
 /**
  * Fetch address Info
  */
-export function useAddress(enabled = true) {
+export function useGetAddress(enabled = true) {
   return useQuery({
     queryKey: ["user-address"],
     queryFn: async () => {

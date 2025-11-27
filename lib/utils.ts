@@ -1,5 +1,6 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
+import { CartItem } from "./types"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -20,3 +21,9 @@ export function formatDate(date: Date): string {
   }).format(new Date(date))
 }
 
+export function mapCartItemsForBackend(items: CartItem[]) {
+  return items.map(item => ({
+    product_id: item.productId,
+    quantity: item.quantity,
+  }))
+}
