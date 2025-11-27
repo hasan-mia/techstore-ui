@@ -1,6 +1,38 @@
 import { Facebook, Instagram, Mail, Phone, Twitter } from "lucide-react";
+import { useState, useEffect } from "react";
 
 export default function TopBar() {
+    const [isVisible, setIsVisible] = useState(true);
+    const [lastScrollY, setLastScrollY] = useState(0);
+
+    useEffect(() => {
+        let ticking = false;
+
+        const handleScroll = () => {
+            if (!ticking) {
+                window.requestAnimationFrame(() => {
+                    const currentScrollY = window.scrollY;
+
+                    // Hide topbar when scrolling down, show when scrolling up
+                    if (currentScrollY > lastScrollY && currentScrollY > 100) {
+                        setIsVisible(false);
+                    } else if (currentScrollY < lastScrollY) {
+                        setIsVisible(true);
+                    }
+
+                    setLastScrollY(currentScrollY);
+                    ticking = false;
+                });
+                ticking = true;
+            }
+        };
+
+        window.addEventListener("scroll", handleScroll, { passive: true });
+        return () => window.removeEventListener("scroll", handleScroll);
+    }, [lastScrollY]);
+
+    if (!isVisible) return null;
+
     return (
         <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white text-sm">
             <div className="container mx-auto px-4 py-2.5">
@@ -53,5 +85,5 @@ export default function TopBar() {
                 </div>
             </div>
         </div>
-    )
+    );
 }
