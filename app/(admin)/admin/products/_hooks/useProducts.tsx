@@ -122,8 +122,8 @@ export default function useProducts(pageName?: string, id?: string) {
 
     // --- UPLOAD IMAGES ---
     const onUploadImages = async (files: File[]) => {
-        if (!files || files.length === 0) {
-            toast.error("No files selected for upload.")
+        if (!files || files.length < 2) {
+            toast.error("Minimum 2 image should upload")
             return
         }
 

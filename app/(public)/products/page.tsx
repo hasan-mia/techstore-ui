@@ -24,19 +24,8 @@ function ProductsContent() {
   const [page, setPage] = useState(1)
   const limit = 12
 
+  // ✅ ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS
   const { data: catData, isLoading: catLoading, isFetching, error: catError } = useCategories();
-
-  if (catLoading || isFetching || catData?.categories?.length === 0) {
-    return null;
-  }
-
-  if (catError) {
-    return (
-      <div className="bg-red-100 py-3 text-center text-red-600">
-        Failed to load categories
-      </div>
-    );
-  }
 
   // Fetch products using the API hook
   const { data, isLoading, isError, error } = useProducts({
@@ -65,6 +54,38 @@ function ProductsContent() {
 
     return result
   }, [data?.products, selectedRatings])
+
+  // ✅ NOW SAFE TO DO CONDITIONAL RETURNS AFTER ALL HOOKS
+  if (catLoading || isFetching) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
+          <p className="text-slate-600">Loading categories...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (catError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="bg-red-100 py-3 px-6 rounded-lg text-center text-red-600">
+          Failed to load categories
+        </div>
+      </div>
+    );
+  }
+
+  if (!catData?.categories || catData.categories.length === 0) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-slate-600">No categories available</p>
+        </div>
+      </div>
+    );
+  }
 
   const selectedCategory = categoryId ? catData?.categories?.find((c) => c?.id === categoryId) : null
 
